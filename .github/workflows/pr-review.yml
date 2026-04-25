@@ -1,0 +1,47 @@
+name: PR Review Agent
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main, develop]
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: read
+
+jobs:
+  review:
+    name: AI Review with Jira context
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r .github/agent/requirements.txt
+
+      - name: Run PR Review Agent
+        env:
+          GITHUB_TOKEN:        ${{ secrets.GITHUB_TOKEN }}
+          JIRA_BASE_URL:       ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL:     ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN:      ${{ secrets.JIRA_API_TOKEN }}
+          COPILOT_API_TOKEN:   ${{ secrets.COPILOT_API_TOKEN }}
+          PR_NUMBER:           ${{ github.event.pull_request.number }}
+          PR_TITLE:            ${{ github.event.pull_request.title }}
+          PR_BODY:             ${{ github.event.pull_request.body }}
+          REPO:                ${{ github.repository }}
+          BASE_SHA:            ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA:            ${{ github.event.pull_request.head.sha }}
+        run: python .github/agent/main.py
