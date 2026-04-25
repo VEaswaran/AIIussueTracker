@@ -1,3 +1,16 @@
+# =============================================================================
+# ⚠️  DISABLED — No Jira enterprise account available yet.
+#
+# To re-enable:
+#   1. Uncomment the import in main.py:
+#        from jira_client import extract_jira_key, fetch_jira_story
+#   2. Uncomment the Jira fetch block in main.py _handle_medium()
+#   3. Add these GitHub secrets:
+#        JIRA_BASE_URL       e.g. https://yourorg.atlassian.net
+#        JIRA_USER_EMAIL     your Atlassian account email
+#        JIRA_API_TOKEN      from https://id.atlassian.com/manage-profile/security/api-tokens
+#   4. Uncomment the three JIRA_* env vars in .github/workflows/pr-review.yml
+# =============================================================================
 """
 Jira client — extracts story and acceptance criteria from a linked Jira ticket.
 
@@ -100,28 +113,13 @@ def _extract_text(adf_node) -> str:
 def _extract_ac(fields: dict) -> list[str]:
     """
     Try to find acceptance criteria in:
-    1. A dedicated custom field named something like 'Acceptance Criteria'
+    1. A dedicated custom field whose ADF text contains an AC-like heading
     2. Bullet points under an '## Acceptance Criteria' heading in the description
     3. Falls back to empty list (reviewer will note AC not found)
     """
-    # Strategy 1: look for a custom field with an AC-like name
+    # Strategy 1: check all custom fields — return first one that contains AC keywords
     for key, value in fields.items():
-        if key.startswith('customfield_') and value:
-            # Jira stores custom field metadata in 'names' but we don't have
-            # it here — check by content heuristic: list-like ADF with bullet items
-            text = _extract_text(value)
-            if text and len(text) > 20:
-                continue
-
-    # Strategy 2: scan description for AC section
-    description = _extract_text(fields.get('description'))
-    criteria = _parse_ac_from_text(description)
-    if criteria:
-        return criteria
-
-    # Strategy 3: check all custom fields by extracting text and looking for AC headers
-    for key, value in fields.items():
-        if not key.startswith('customfield_'):
+        if not key.startswith('customfield_') or not value:
             continue
         text = _extract_text(value)
         if not text:
@@ -131,6 +129,12 @@ def _extract_ac(fields: dict) -> list[str]:
             criteria = _parse_ac_from_text(text)
             if criteria:
                 return criteria
+
+    # Strategy 2: scan description for AC section
+    description = _extract_text(fields.get('description'))
+    criteria = _parse_ac_from_text(description)
+    if criteria:
+        return criteria
 
     return []
 

@@ -1,0 +1,42 @@
+# =============================================================================
+# Jenkins — Required Plugins
+# =============================================================================
+# Install all of these via:  Jenkins → Manage Jenkins → Plugins → Available
+#
+# Core pipeline
+pipeline                        # Declarative Pipeline support
+workflow-aggregator             # Pipeline suite (already bundled in most installs)
+pipeline-stage-view             # Visual stage view in Blue Ocean / classic UI
+blueocean                       # Modern pipeline UI (optional but recommended)
+
+# SCM
+git                             # Git SCM integration
+github                          # GitHub project + webhooks
+github-branch-source            # Multibranch pipeline from GitHub repos
+
+# Build tools
+maven-plugin                    # Maven integration (mvn steps in pipeline)
+jdk-tool                        # JDK tool installer
+
+# Test & quality
+junit                           # JUnit test result publisher
+jacoco                          # JaCoCo code coverage publisher
+sonar                           # SonarQube Scanner integration (optional)
+
+# Docker plugins removed — add back when Docker registry is ready
+# docker-workflow                 # docker.build / docker.withRegistry DSL
+# docker-plugin                   # Docker agent / cloud support
+
+# Deployment
+ssh-agent                       # sshagent() step — needed for SSH deploy stage
+publish-over-ssh                # Alternative SSH file copy (optional)
+
+# Credentials & security
+credentials                     # Core credentials plugin
+credentials-binding             # credentials() in environment block
+ssh-credentials                 # SSH private key credential type
+
+# Notifications (optional)
+email-ext                       # Extended email notifications
+slack                           # Slack notifications
+
