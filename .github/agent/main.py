@@ -6,14 +6,14 @@ Flow:
   2. Fetch the git diff and changed file list
   3. Classify the PR (small / medium / large)
   4. If small → auto-approve and merge
-  5. If medium → extract Jira key, fetch story + AC, run AI review, post review
+  5. If medium → run AI review (Jira workflow disabled — no enterprise account)
   6. If large → post a comment flagging for manual review
 """
 import os
 import sys
 
 from classifier    import classify_pr
-from jira_client   import extract_jira_key, fetch_jira_story
+# from jira_client   import extract_jira_key, fetch_jira_story  # Disabled: no Jira enterprise account
 from reviewer      import run_review
 from prompts       import (
     REVIEW_SYSTEM_PROMPT,
@@ -81,27 +81,36 @@ def _handle_small(classification):
 
 
 def _handle_medium(pr_title, pr_body, diff, classification):
-    print('[agent] Medium PR — fetching Jira story and running AI review')
+    print('[agent] Medium PR — running AI review (Jira integration disabled)')
 
-    # --- Fetch Jira context ---
-    jira_key  = extract_jira_key(pr_title, pr_body)
-    jira_data = None
-    story     = ''
-    criteria  = []
-    jira_url  = None
+    # --- Jira workflow disabled (no Jira enterprise account) ---
+    # Uncomment the block below once a Jira account is available and
+    # JIRA_BASE_URL / JIRA_USER_EMAIL / JIRA_API_TOKEN secrets are set.
+    #
+    # jira_key  = extract_jira_key(pr_title, pr_body)
+    # jira_data = None
+    # story     = ''
+    # criteria  = []
+    # jira_url  = None
+    #
+    # if jira_key:
+    #     print(f'[agent] Jira ticket found: {jira_key}')
+    #     jira_data = fetch_jira_story(jira_key)
+    #     if jira_data:
+    #         story    = f"{jira_data.summary}\n\n{jira_data.story}"
+    #         criteria = jira_data.criteria
+    #         jira_url = jira_data.url
+    #         print(f'[agent] Loaded {len(criteria)} acceptance criteria from Jira')
+    #     else:
+    #         print(f'[agent] Could not fetch Jira ticket {jira_key}')
+    # else:
+    #     print('[agent] No Jira key found in PR title/body — reviewing without story context')
 
-    if jira_key:
-        print(f'[agent] Jira ticket found: {jira_key}')
-        jira_data = fetch_jira_story(jira_key)
-        if jira_data:
-            story    = f"{jira_data.summary}\n\n{jira_data.story}"
-            criteria = jira_data.criteria
-            jira_url = jira_data.url
-            print(f'[agent] Loaded {len(criteria)} acceptance criteria from Jira')
-        else:
-            print(f'[agent] Could not fetch Jira ticket {jira_key}')
-    else:
-        print('[agent] No Jira key found in PR title/body — reviewing without story context')
+    jira_key = None
+    story    = ''
+    criteria = []
+    jira_url = None
+    print('[agent] Reviewing without Jira story context')
 
     # --- Build and run AI review ---
     user_prompt = build_review_prompt(

@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   review:
-    name: AI Review with Jira context
+    name: AI Review (Jira disabled — no enterprise account)
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -34,9 +34,10 @@ jobs:
       - name: Run PR Review Agent
         env:
           GITHUB_TOKEN:        ${{ secrets.GITHUB_TOKEN }}
-          JIRA_BASE_URL:       ${{ secrets.JIRA_BASE_URL }}
-          JIRA_USER_EMAIL:     ${{ secrets.JIRA_USER_EMAIL }}
-          JIRA_API_TOKEN:      ${{ secrets.JIRA_API_TOKEN }}
+          # Jira integration disabled — uncomment when Jira enterprise account is available
+          # JIRA_BASE_URL:       ${{ secrets.JIRA_BASE_URL }}
+          # JIRA_USER_EMAIL:     ${{ secrets.JIRA_USER_EMAIL }}
+          # JIRA_API_TOKEN:      ${{ secrets.JIRA_API_TOKEN }}
           COPILOT_API_TOKEN:   ${{ secrets.COPILOT_API_TOKEN }}
           PR_NUMBER:           ${{ github.event.pull_request.number }}
           PR_TITLE:            ${{ github.event.pull_request.title }}
