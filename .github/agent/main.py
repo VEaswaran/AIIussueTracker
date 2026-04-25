@@ -5,9 +5,14 @@ Flow:
   1. Get PR metadata from environment (set by GitHub Actions)
   2. Fetch the git diff and changed file list
   3. Classify the PR (small / medium / large)
-  4. If small → auto-approve and merge
+  4. If small  → check CODEOWNER gate; auto-merge only if codeowner authored or approved
   5. If medium → run AI review (Jira workflow disabled — no enterprise account)
-  6. If large → post a comment flagging for manual review
+  6. If large  → post a comment flagging for manual review
+
+CODEOWNER policy:
+  - Direct merges to main require CODEOWNER approval (enforced by GitHub branch protection)
+  - Agent auto-merge is additionally gated: will not merge unless the PR author IS a
+    codeowner OR at least one codeowner has submitted an APPROVED review
 """
 import os
 import sys
@@ -24,6 +29,9 @@ from prompts       import (
 from github_client import (
     get_pr_diff,
     get_pr_files,
+    get_pr_author,
+    has_codeowner_approval,
+    _parse_codeowners,
     post_review,
     post_comment,
     auto_merge,
@@ -68,9 +76,33 @@ def main():
 
 
 def _handle_small(classification):
-    print('[agent] Small PR — auto-approving and merging')
+    print('[agent] Small PR — reviewing for auto-merge (CODEOWNER gate applies)')
+
+    codeowners = _parse_codeowners()
+    author     = get_pr_author()
+    print(f'[agent] PR author: {author} | Codeowners: {codeowners}')
+
     comment = build_auto_merge_comment(classification.reason, classification)
     post_comment(comment)
+
+    # --- CODEOWNER gate ---
+    # Auto-merge is allowed only if:
+    #   (a) the PR author is themselves a codeowner, OR
+    #   (b) at least one codeowner has explicitly approved the PR
+    author_is_owner   = author in codeowners
+    owner_has_approved = has_codeowner_approval(codeowners)
+
+    if not author_is_owner and not owner_has_approved:
+        post_comment(
+            '🔒 **PR Review Agent — CODEOWNER approval required**\n\n'
+            'This PR looks good and qualifies for auto-merge, but a **CODEOWNER must approve** it first.\n\n'
+            f'Required approvers: {", ".join(f"`@{o}`" for o in codeowners if "/" not in o)}\n\n'
+            'Once a codeowner approves, re-run this workflow or push a new commit to trigger auto-merge.'
+        )
+        print('[agent] Auto-merge blocked — waiting for codeowner approval')
+        return
+
+    print('[agent] CODEOWNER gate passed — proceeding with auto-merge')
     success = auto_merge(classification.reason)
     if not success:
         post_comment(

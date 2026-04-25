@@ -1,0 +1,14 @@
+# =============================================================================
+# CODEOWNERS — AI Issue Tracker MCP
+#
+# All paths are owned by @VEaswaran.
+# Add more owners or a team (e.g. @org/team) as needed.
+#
+# Rules enforced:
+#   - PRs targeting main MUST be approved by a CODEOWNER before merging
+#   - Agent auto-merge is also gated on CODEOWNER approval
+#   - Direct pushes to main are blocked via branch protection
+# =============================================================================
+
+# Default owner for every file in the repository
+*   @VEaswaran

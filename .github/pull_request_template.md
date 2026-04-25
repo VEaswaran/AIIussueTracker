@@ -1,7 +1,3 @@
-## Jira Ticket
-<!-- Paste the ticket key or URL — e.g. PROJ-123 or https://yourorg.atlassian.net/browse/PROJ-123 -->
-Jira: 
-
 ## What does this PR do?
 <!-- Brief summary of the change -->
 
@@ -21,5 +17,5 @@ Jira:
 <!-- Anything the AI or human reviewer should know — edge cases, tradeoffs, out of scope items -->
 
 ---
-<!-- The PR Review Agent will automatically fetch story and acceptance criteria from the Jira ticket above. -->
-<!-- Ensure the Jira ticket has a populated "Acceptance Criteria" field for best results. -->
+<!-- The PR Review Agent will automatically review this PR when it is opened. -->
+<!-- A CODEOWNER must approve before this PR can be merged. -->

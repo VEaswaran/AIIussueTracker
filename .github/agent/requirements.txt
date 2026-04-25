@@ -1,1 +1,5 @@
+# PR Review Agent dependencies
+# Install locally:  pip install -r .github/agent/requirements.txt
+# Used by: github_client.py, reviewer.py
+# Note: jira_client.py also uses requests but is currently disabled
 requests>=2.31.0

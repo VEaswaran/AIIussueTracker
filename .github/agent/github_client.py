@@ -156,8 +156,8 @@ def _build_review_body(review: dict) -> str:
         lines.extend(f'- {t}' for t in test_gaps)
 
     lines.append(
-        '\n---\n*Reviewed by PR Review Agent — story context fetched from Jira. '
-        'Human approvers should validate before merging.*'
+        '\n---\n*Reviewed by PR Review Agent. '
+        'A **CODEOWNER must approve** before this PR can be merged.*'
     )
     return '\n'.join(lines)
 
@@ -171,6 +171,79 @@ def post_comment(message: str) -> None:
         timeout=15
     )
     r.raise_for_status()
+
+
+def get_pr_author() -> str:
+    """Return the GitHub login of the PR author."""
+    pr_number = os.environ.get('PR_NUMBER', '')
+    r = requests.get(
+        f'{BASE_URL}/repos/{REPO}/pulls/{pr_number}',
+        headers=HEADERS,
+        timeout=15,
+    )
+    r.raise_for_status()
+    return r.json().get('user', {}).get('login', '')
+
+
+def _parse_codeowners() -> list[str]:
+    """
+    Parse .github/CODEOWNERS and return a flat list of GitHub logins (without @).
+    Handles lines like:  *   @vijay-vj   or   src/  @org/team
+    Team handles (org/team) are returned as-is so the caller can decide.
+    """
+    owners: list[str] = []
+    codeowners_path = os.path.join(
+        os.environ.get('GITHUB_WORKSPACE', '.'), '.github', 'CODEOWNERS'
+    )
+    try:
+        with open(codeowners_path, encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                # Each token after the first is an owner
+                parts = line.split()
+                for part in parts[1:]:
+                    login = part.lstrip('@')
+                    if login and login not in owners:
+                        owners.append(login)
+    except FileNotFoundError:
+        print('[github] CODEOWNERS file not found — assuming no codeowner restriction')
+    return owners
+
+
+def has_codeowner_approval(codeowners: list[str]) -> bool:
+    """
+    Return True if at least one CODEOWNER has submitted an APPROVED review
+    on the current PR (and that approval has not been dismissed).
+    """
+    pr_number = os.environ.get('PR_NUMBER', '')
+    r = requests.get(
+        f'{BASE_URL}/repos/{REPO}/pulls/{pr_number}/reviews',
+        headers=HEADERS,
+        params={'per_page': 100},
+        timeout=15,
+    )
+    r.raise_for_status()
+
+    # Walk reviews newest-first; track latest state per reviewer
+    latest: dict[str, str] = {}
+    for review in r.json():
+        login = review.get('user', {}).get('login', '')
+        state = review.get('state', '')
+        if login and login not in latest:
+            latest[login] = state
+
+    for owner in codeowners:
+        # Skip org/team entries (contain '/') — GitHub handles those server-side
+        if '/' in owner:
+            continue
+        if latest.get(owner) == 'APPROVED':
+            print(f'[github] Codeowner approval found from: {owner}')
+            return True
+
+    print(f'[github] No codeowner approval yet — codeowners: {codeowners}')
+    return False
 
 
 def auto_merge(reason: str) -> bool:
